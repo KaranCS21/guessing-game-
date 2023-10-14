@@ -1,25 +1,19 @@
-name: Build and Test
-
-on:
-  push:
-    branches:
-      - main
+on: push
+name: Find LaunchDarkly flag code references
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  launchDarklyCodeReferences:
+    name: LaunchDarkly Code References
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Check Out Repository
-      uses: actions/checkout@v2
-      
-    - name: Set Up C++ Environment
-      uses: actions/setup-cpp@v2
+    - uses: actions/checkout@v3
       with:
-        compiler: 'gcc'
-        
-    - name: Build Project
-      run: make
-      
-    - name: Run Tests
-      run: make test
+        fetch-depth: 10 # This value must be set if the lookback configuration option is not disabled for find-code-references. Read more: https://github.com/launchdarkly/ld-find-code-refs#searching-for-unused-flags-extinctions
+    - name: LaunchDarkly Code References
+      uses: launchdarkly/find-code-references@v2.11.3
+      with:
+        accessToken: ${{ secrets.LD_ACCESS_TOKEN }}
+        projKey: LD_PROJECT_KEY
